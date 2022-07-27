@@ -29,7 +29,7 @@ jobs:
 
     # STEP 2: Copy files to a storage account
     - name: Copy files to a storage account
-      uses: bacongobbler/azure-blob-storage-upload@v1.1.1
+      uses: bacongobbler/azure-blob-storage-upload@main
       with:
         connection_string: ${{ secrets.STORAGEACCOUNTSECRET }}
         container_name: ps-docs
