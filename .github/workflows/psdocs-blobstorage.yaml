@@ -11,12 +11,28 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    # STEP 1: Generate Markdowns using PSDocs
+    # STEP 1: Bicep build
+    - name: Bicep Build
+      shell: pwsh
+      run: |
+        Get-ChildItem -Recurse -Filter '*.bicep' -Exclude 'callModuleFromACR.example.bicep','orchHubSpoke.bicep' | ForEach-Object {
+            Write-Information "==> Attempting Bicep Build For File: $_" -InformationAction Continue
+            $output = bicep build $_.FullName 2>&1
+            if ($LastExitCode -ne 0)
+            {
+              throw $output
+            }
+            Else
+            {
+              echo $output
+            }   
+        }
+    # STEP 2: Generate Markdowns using PSDocs
     - name: Generate ARM markdowns
       run: | 
         Install-Module -Name 'PSDocs.Azure' -Repository PSGallery -force;
         # Scan for Azure template file recursively in the templates/ directory
-        Get-AzDocTemplateFile -Path templates/ | ForEach-Object {
+        Get-AzDocTemplateFile -Path infra-as-code/modules/ | ForEach-Object {
           # Generate a standard name of the markdown file. i.e. <name>_<version>.md
           $template = Get-Item -Path $_.TemplateFile;
           $templateName = $template.Directory.Parent.Name;
@@ -27,7 +43,7 @@ jobs:
         }
       shell: pwsh
 
-    # STEP 2: Copy files to a storage account
+    # STEP 3: Copy files to a storage account
     - name: Copy files to a storage account
       uses: bacongobbler/azure-blob-storage-upload@main
       with:
